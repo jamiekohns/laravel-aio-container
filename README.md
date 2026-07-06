@@ -26,7 +26,7 @@ The installer is idempotent and safe to re-run.
 - Install location: `~/.laravel-aio-container`
 - Laravel projects path: `~/laravel-projects` (override with `LARAVEL_AIO_PROJECTS_DIR` in `.env`)
 - Traefik HTTP entrypoint: `http://localhost:80`
-- Traefik dashboard: `http://localhost:8080` (insecure API mode for local development only; do not expose publicly)
+- Traefik dashboard: `http://localhost:8080` (`TRAEFIK_INSECURE_DASHBOARD=true` by default for local dev; do not expose publicly)
 - Portainer: `http://localhost:9000`
 
 ## Commands

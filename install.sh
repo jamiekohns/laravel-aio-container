@@ -5,7 +5,7 @@ TARGET_USER="${SUDO_USER:-$USER}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 TARGET_HOME="${TARGET_HOME:-$HOME}"
 
-REPO_URL="${LARAVEL_AIO_REPO_URL:-https://github.com/jamiekohns/laravel-aio-container.git}"
+REPO_URL="${LARAVEL_AIO_REPO:-${LARAVEL_AIO_REPO_URL:-https://github.com/jamiekohns/laravel-aio-container.git}}"
 INSTALL_DIR="${LARAVEL_AIO_DIR:-$TARGET_HOME/.laravel-aio-container}"
 ENV_FILE="$TARGET_HOME/.laravel_aio_env.sh"
 BASHRC_FILE="$TARGET_HOME/.bashrc"
@@ -94,7 +94,7 @@ install_docker_if_needed() {
   fi
 
   run_root apt-get update
-  run_root apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin git
+  run_root apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 }
 
 configure_docker_group() {
