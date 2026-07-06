@@ -76,6 +76,7 @@ laravel-aio new my-app
 ## Security considerations
 
 - `TRAEFIK_INSECURE_DASHBOARD=true` exposes the Traefik dashboard without auth; keep this local-only and never expose `:8080` externally.
+- If you need broader network access, set `TRAEFIK_INSECURE_DASHBOARD=false` and configure authenticated access before exposing Traefik.
 - Portainer uses Docker socket access for management operations; treat this setup as trusted local development only.
 
 ## Existing container image and wrapper notes

@@ -32,7 +32,7 @@ is_wsl() {
 }
 
 is_wsl2() {
-  grep -qi 'wsl2' /proc/sys/kernel/osrelease 2>/dev/null || grep -qi 'microsoft' /proc/version 2>/dev/null
+  grep -qi 'wsl2' /proc/sys/kernel/osrelease 2>/dev/null || grep -qi 'wsl2' /proc/version 2>/dev/null
 }
 
 ensure_base_tools() {
@@ -205,12 +205,12 @@ print_summary() {
   echo "Portainer:         http://localhost:9000"
   echo
   echo "Next steps:"
-  echo "  1) Reload your shell: source \"$BASHRC_FILE\""
+  echo "  - Reload your shell: source \"$BASHRC_FILE\""
   if [ "$GROUP_CHANGED" -eq 1 ]; then
-    echo "  2) Docker group membership changed. Open a new terminal (or run: newgrp docker)"
+    echo "  - Docker group membership changed. Open a new terminal (or run: newgrp docker)"
   fi
-  echo "  3) Start services: laravel-aio up"
-  echo "  4) Create a project: laravel-aio new my-app"
+  echo "  - Start services: laravel-aio up"
+  echo "  - Create a project: laravel-aio new my-app"
 }
 
 main() {
