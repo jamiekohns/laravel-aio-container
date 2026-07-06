@@ -19,7 +19,7 @@ services:
       - web
 
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:2.21.4
     container_name: laravel-aio-portainer
     restart: unless-stopped
     ports:

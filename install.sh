@@ -32,7 +32,7 @@ is_wsl() {
 }
 
 is_wsl2() {
-  grep -qi 'wsl2' /proc/sys/kernel/osrelease 2>/dev/null || grep -qi 'microsoft-standard-WSL2' /proc/version 2>/dev/null
+  grep -qi 'wsl2' /proc/sys/kernel/osrelease 2>/dev/null || grep -qi 'microsoft' /proc/version 2>/dev/null
 }
 
 ensure_base_tools() {
@@ -144,6 +144,15 @@ read_projects_dir() {
   local configured
   configured="$(grep -E '^LARAVEL_AIO_PROJECTS_DIR=' "$INSTALL_DIR/.env" 2>/dev/null | tail -n1 | cut -d= -f2- || true)"
   if [ -n "$configured" ]; then
+    configured="${configured%\"}"
+    configured="${configured#\"}"
+    configured="${configured%\'}"
+    configured="${configured#\'}"
+    configured="${configured//\$HOME/$TARGET_HOME}"
+    case "$configured" in
+      "~/"*) configured="$TARGET_HOME/${configured#~/}" ;;
+      "~") configured="$TARGET_HOME" ;;
+    esac
     printf '%s\n' "$configured"
   else
     printf '%s\n' "$default_dir"
