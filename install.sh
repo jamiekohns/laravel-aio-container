@@ -123,7 +123,7 @@ ensure_repo_checkout() {
   if [ -d "$INSTALL_DIR/.git" ]; then
     log "Updating existing repo at $INSTALL_DIR..."
     if ! git -C "$INSTALL_DIR" pull --ff-only; then
-      die "could not fast-forward update at $INSTALL_DIR (local changes or divergent history). Resolve manually, then re-run."
+      die "could not update repo at $INSTALL_DIR. Check network/auth and local repo state, then re-run."
     fi
     return 0
   fi
