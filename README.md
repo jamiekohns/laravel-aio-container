@@ -3,6 +3,9 @@ adding `nginx`, and including Node/npm, Microsoft SQL Server support, mailparse 
 
 Together with Portainer and Traefik, you can build a multi-project local development environment.
 
+> Note, the default user in the Laravel container is `dev` (id 1000) any operation that modifies files should be run as the `dev` user
+> The `doctrl enter` function uses this by default.
+
 # Build Project Container
 ```bash
   docker build \
