@@ -6,6 +6,14 @@ For daily Laravel development, this repository provides a one-command Ubuntu-on-
 bash <(curl -fsSL https://raw.githubusercontent.com/jamiekohns/laravel-aio-container/main/install.sh)
 ```
 
+Safer two-step alternative:
+
+```bash
+curl -fsSLo /tmp/laravel-aio-install.sh https://raw.githubusercontent.com/jamiekohns/laravel-aio-container/main/install.sh
+less /tmp/laravel-aio-install.sh
+bash /tmp/laravel-aio-install.sh
+```
+
 The installer is idempotent and safe to re-run.
 
 ## What the installer does
@@ -64,6 +72,11 @@ laravel-aio new my-app
 
 - `laravel-aio: command not found`  
   Run `source ~/.bashrc` or open a new terminal.
+
+## Security considerations
+
+- `TRAEFIK_INSECURE_DASHBOARD=true` exposes the Traefik dashboard without auth; keep this local-only and never expose `:8080` externally.
+- Portainer uses Docker socket access for management operations; treat this setup as trusted local development only.
 
 ## Existing container image and wrapper notes
 

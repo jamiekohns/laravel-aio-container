@@ -5,7 +5,7 @@ TARGET_USER="${SUDO_USER:-$USER}"
 TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
 TARGET_HOME="${TARGET_HOME:-$HOME}"
 
-REPO_URL="${LARAVEL_AIO_REPO:-${LARAVEL_AIO_REPO_URL:-https://github.com/jamiekohns/laravel-aio-container.git}}"
+REPO_URL="${LARAVEL_AIO_REPO_URL:-https://github.com/jamiekohns/laravel-aio-container.git}"
 INSTALL_DIR="${LARAVEL_AIO_DIR:-$TARGET_HOME/.laravel-aio-container}"
 ENV_FILE="$TARGET_HOME/.laravel_aio_env.sh"
 BASHRC_FILE="$TARGET_HOME/.bashrc"
@@ -122,11 +122,13 @@ start_docker_service() {
 ensure_repo_checkout() {
   if [ -d "$INSTALL_DIR/.git" ]; then
     log "Updating existing repo at $INSTALL_DIR..."
-    git -C "$INSTALL_DIR" pull --ff-only
+    if ! git -C "$INSTALL_DIR" pull --ff-only; then
+      die "could not fast-forward update at $INSTALL_DIR (local changes or divergent history). Resolve manually, then re-run."
+    fi
     return 0
   fi
   if [ -e "$INSTALL_DIR" ] && [ -n "$(find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 2>/dev/null | head -n 1)" ]; then
-    die "target path exists and is not an empty repo checkout: $INSTALL_DIR"
+    die "target path exists and is not empty: $INSTALL_DIR. Remove it or set LARAVEL_AIO_DIR to a different location."
   fi
   log "Cloning repository to $INSTALL_DIR..."
   git clone "$REPO_URL" "$INSTALL_DIR"
