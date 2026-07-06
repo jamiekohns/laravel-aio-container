@@ -171,17 +171,24 @@ docker_cmd() {
 
 start_core_services() {
   local compose_file="$INSTALL_DIR/compose.yaml"
+  local env_file="$INSTALL_DIR/.env"
   [ -f "$compose_file" ] || die "compose file missing at $compose_file"
   log "Starting core services (Traefik + Portainer)..."
-  docker_cmd compose -f "$compose_file" --project-name laravel-aio up -d
+  if [ -f "$env_file" ]; then
+    docker_cmd compose --env-file "$env_file" -f "$compose_file" --project-name laravel-aio up -d
+  else
+    docker_cmd compose -f "$compose_file" --project-name laravel-aio up -d
+  fi
 }
 
 install_shell_integration() {
+  local escaped_install_dir
+  escaped_install_dir="$(printf '%q' "$INSTALL_DIR")"
   touch "$ENV_FILE"
   if ! grep -q 'laravel-aio managed block' "$ENV_FILE"; then
     cat >>"$ENV_FILE" <<EOF
 # laravel-aio managed block
-export LARAVEL_AIO_DIR="${INSTALL_DIR}"
+export LARAVEL_AIO_DIR=${escaped_install_dir}
 laravel-aio() {
   "\${LARAVEL_AIO_DIR}/bin/laravel-aio.sh" "\$@"
 }
