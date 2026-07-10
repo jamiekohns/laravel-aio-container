@@ -36,6 +36,27 @@ services:
     networks:
       - web
 
+  laravel-aio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: laravel-aio
+    container_name: laravel-aio-${PROJECT_NAME:-laravel-app}
+    restart: unless-stopped
+    volumes:
+      - ${APP_DIR:-~/laravel-projects/laravel-app}:/var/www/html
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.${PROJECT_NAME:-laravel-app}.rule=Host(`${PROJECT_NAME:-laravel-app}.localhost`)
+      - traefik.http.routers.${PROJECT_NAME:-laravel-app}.entrypoints=web
+      - traefik.http.services.${PROJECT_NAME:-laravel-app}.loadbalancer.server.port=80
+    networks:
+      - web
+
 networks:
   web:
     name: web

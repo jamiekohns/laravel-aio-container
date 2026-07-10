@@ -12,10 +12,30 @@ BASHRC_FILE="$TARGET_HOME/.bashrc"
 SOURCE_LINE='[ -f "$HOME/.laravel_aio_env.sh" ] && source "$HOME/.laravel_aio_env.sh"'
 
 GROUP_CHANGED=0
+PROJECT_NAME_ARG=""
 
 log() { printf '[laravel-aio] %s\n' "$*"; }
 warn() { printf '[laravel-aio] warning: %s\n' "$*" >&2; }
 die() { printf '[laravel-aio] error: %s\n' "$*" >&2; exit 1; }
+
+parse_args() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --project-name)
+        [ -n "${2:-}" ] || die "--project-name requires a value"
+        PROJECT_NAME_ARG="$2"
+        shift 2
+        ;;
+      --project-name=*)
+        PROJECT_NAME_ARG="${1#--project-name=}"
+        shift
+        ;;
+      *)
+        die "unknown argument: $1"
+        ;;
+    esac
+  done
+}
 
 run_root() {
   if [ "${EUID:-$(id -u)}" -eq 0 ]; then
@@ -202,14 +222,58 @@ EOF
   fi
 }
 
+update_or_append_env_var() {
+  local env_file="$1" key="$2" value="$3"
+  # Escape characters special in the sed replacement side; use # as delimiter
+  local escaped_value
+  escaped_value="$(printf '%s' "$value" | sed 's/[\\&#]/\\&/g')"
+  if grep -q "^${key}=" "$env_file" 2>/dev/null; then
+    sed -i "s#^${key}=.*#${key}=${escaped_value}#" "$env_file"
+  else
+    printf '%s=%s\n' "$key" "$value" >> "$env_file"
+  fi
+}
+
+set_project_name() {
+  local name="${PROJECT_NAME_ARG:-}"
+  if [ -z "$name" ]; then
+    name="laravel-app"
+    log "No --project-name provided, using default: $name"
+  fi
+  [ -n "$name" ] || die "project name must not be empty"
+  case "$name" in
+    *[!a-zA-Z0-9-]*)
+      die "project name can only contain letters, numbers, and dashes"
+      ;;
+  esac
+  local env_file="$INSTALL_DIR/.env"
+  local projects_dir
+  projects_dir="$(read_projects_dir)"
+  update_or_append_env_var "$env_file" "PROJECT_NAME" "$name"
+  update_or_append_env_var "$env_file" "APP_DIR" "${projects_dir}/${name}"
+  log "Project name set to: $name"
+}
+
+build_laravel_aio_image() {
+  log "Building laravel-aio Docker image..."
+  docker_cmd build \
+    --build-arg UID="$(id -u)" \
+    --build-arg GID="$(id -g)" \
+    -t laravel-aio \
+    "$INSTALL_DIR"
+  log "laravel-aio image built successfully."
+}
+
 print_summary() {
   local projects_dir="$1"
+  local project_name="${PROJECT_NAME_ARG:-laravel-app}"
   log "Install complete."
   echo
   echo "Laravel AIO is installed at: $INSTALL_DIR"
   echo "Projects directory: $projects_dir"
   echo "Traefik dashboard: http://localhost:8080"
   echo "Portainer:         http://localhost:9000"
+  echo "Laravel app:       http://${project_name}.localhost"
   echo
   echo "Next steps:"
   echo "  - Reload your shell: source \"$BASHRC_FILE\""
@@ -217,10 +281,11 @@ print_summary() {
     echo "  - Docker group membership changed. Open a new terminal (or run: newgrp docker)"
   fi
   echo "  - Start services: laravel-aio up"
-  echo "  - Create a project: laravel-aio new my-app"
+  echo "  - Create a project: laravel-aio new ${project_name}"
 }
 
 main() {
+  parse_args "$@"
   check_platform
   ensure_base_tools
   install_docker_if_needed
@@ -228,6 +293,8 @@ main() {
   start_docker_service
   ensure_repo_checkout
   init_env
+  set_project_name
+  build_laravel_aio_image
   mkdir -p "$(read_projects_dir)"
   start_core_services
   install_shell_integration

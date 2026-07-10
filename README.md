@@ -3,7 +3,7 @@ For daily Laravel development, this repository provides a one-command Ubuntu-on-
 ## One-command install (Ubuntu on WSL2)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/jamiekohns/laravel-aio-container/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/jamiekohns/laravel-aio-container/main/install.sh) --project-name my-app
 ```
 
 Safer two-step alternative:
@@ -11,10 +11,18 @@ Safer two-step alternative:
 ```bash
 curl -fsSLo /tmp/laravel-aio-install.sh https://raw.githubusercontent.com/jamiekohns/laravel-aio-container/main/install.sh
 less /tmp/laravel-aio-install.sh
-bash /tmp/laravel-aio-install.sh
+bash /tmp/laravel-aio-install.sh --project-name my-app
 ```
 
 The installer is idempotent and safe to re-run.
+
+### `--project-name` argument
+
+Pass `--project-name <name>` to set the name used for the Laravel container and its Traefik hostname.
+The container will be named `<name>` and accessible at `http://<name>.localhost`.
+If omitted, the default name `laravel-app` is used.
+
+Names may contain letters, numbers, and dashes only.
 
 ## What the installer does
 
@@ -24,7 +32,9 @@ The installer is idempotent and safe to re-run.
 - Starts/enables Docker service when systemd is available
 - Clones/updates the repo at `~/.laravel-aio-container`
 - Initializes `.env` from `.env.example` when missing
-- Starts Traefik + Portainer with Docker Compose
+- Writes `PROJECT_NAME` (and `APP_DIR`) to `.env` based on `--project-name`
+- Builds the `laravel-aio` Docker image from the repo's `Dockerfile`
+- Starts Traefik + Portainer + the Laravel container with Docker Compose
 - Installs shell integration:
   - creates `~/.laravel_aio_env.sh`
   - adds one guarded source line to `~/.bashrc`
@@ -33,9 +43,12 @@ The installer is idempotent and safe to re-run.
 
 - Install location: `~/.laravel-aio-container`
 - Laravel projects path: `~/laravel-projects` (override with `LARAVEL_AIO_PROJECTS_DIR` in `.env`)
+- Project name: `laravel-app` (override with `--project-name` or `PROJECT_NAME` in `.env`)
+- App directory: `~/laravel-projects/<project-name>` (override with `APP_DIR` in `.env`)
 - Traefik HTTP entrypoint: `http://localhost:80`
 - Traefik dashboard: `http://localhost:8080` (`TRAEFIK_INSECURE_DASHBOARD=true` by default for local dev; do not expose publicly)
 - Portainer: `http://localhost:9000`
+- Laravel app: `http://<project-name>.localhost`
 
 ## Commands
 
