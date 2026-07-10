@@ -44,7 +44,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     image: laravel-aio
-    container_name: ${PROJECT_NAME:-laravel-app}
+    container_name: laravel-aio-${PROJECT_NAME:-laravel-app}
     restart: unless-stopped
     volumes:
       - ${APP_DIR:-~/laravel-projects/laravel-app}:/var/www/html

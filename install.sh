@@ -222,6 +222,15 @@ EOF
   fi
 }
 
+update_or_append_env_var() {
+  local env_file="$1" key="$2" value="$3"
+  if grep -q "^${key}=" "$env_file" 2>/dev/null; then
+    sed -i "s|^${key}=.*|${key}=${value}|" "$env_file"
+  else
+    printf '%s=%s\n' "$key" "$value" >> "$env_file"
+  fi
+}
+
 set_project_name() {
   local name="${PROJECT_NAME_ARG:-}"
   if [ -z "$name" ]; then
@@ -236,16 +245,10 @@ set_project_name() {
   local env_file="$INSTALL_DIR/.env"
   local projects_dir
   projects_dir="$(read_projects_dir)"
-  if grep -q '^PROJECT_NAME=' "$env_file" 2>/dev/null; then
-    sed -i "s|^PROJECT_NAME=.*|PROJECT_NAME=${name}|" "$env_file"
-  else
-    printf 'PROJECT_NAME=%s\n' "$name" >> "$env_file"
-  fi
-  if grep -q '^APP_DIR=' "$env_file" 2>/dev/null; then
-    sed -i "s|^APP_DIR=.*|APP_DIR=${projects_dir}/${name}|" "$env_file"
-  else
-    printf 'APP_DIR=%s/%s\n' "$projects_dir" "$name" >> "$env_file"
-  fi
+  update_or_append_env_var "$env_file" "PROJECT_NAME" "$name"
+  update_or_append_env_var "$env_file" "APP_DIR" "${projects_dir}/${name}"
+  update_or_append_env_var "$env_file" "UID" "$(id -u)"
+  update_or_append_env_var "$env_file" "GID" "$(id -g)"
   log "Project name set to: $name"
 }
 
