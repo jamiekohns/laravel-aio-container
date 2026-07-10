@@ -1,0 +1,45 @@
+services:
+  traefik:
+    image: traefik:v3.6.2
+    container_name: laravel-aio-traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --api.insecure=${TRAEFIK_INSECURE_DASHBOARD:-true}
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_data:/data
+    networks:
+      - web
+
+  portainer:
+    image: portainer/portainer-ce:2.21.4
+    container_name: laravel-aio-portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.portainer.rule=Host(`portainer.localhost`)
+      - traefik.http.routers.portainer.entrypoints=web
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+    networks:
+      - web
+
+networks:
+  web:
+    name: web
+
+volumes:
+  traefik_data:
+  portainer_data:

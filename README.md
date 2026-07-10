@@ -1,126 +1,84 @@
-For daily development of Laravel projects, this builds an image on `php-fpm` (v8.3),
-adding `nginx`, and including Node/npm, Microsoft SQL Server support, mailparse and LDAP.
+For daily Laravel development, this repository provides a one-command Ubuntu-on-WSL2 installer that sets up Docker Engine (if needed), Traefik, Portainer, and a simple command wrapper for stack management and project scaffolding.
 
-Together with Portainer and Traefik, you can build a multi-project local development environment.
+## One-command install (Ubuntu on WSL2)
 
-> Note, the default user in the Laravel container is `dev` (id 1000) any operation that modifies files should be run as the `dev` user
-> The `doctrl enter` function uses this by default.
-
-# Build Project Container
 ```bash
-  docker build \
-  -t laravel-php83-fpm-nginx-mailparse \
-  --build-arg INSTALL_MAILPARSE=true \
-  --build-arg UID="$(id -u)" \
-  --build-arg GID="$(id -g)" \
-  .
+bash <(curl -fsSL https://raw.githubusercontent.com/jamiekohns/laravel-aio-container/main/install.sh)
 ```
 
-# Run Traefik
-```bash
-docker network create web 2>/dev/null || true
+Safer two-step alternative:
 
-docker run -d \
-  --name traefik \
-  --restart unless-stopped \
-  -p 80:80 \
-  -p 8080:8080 \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  --network web \
-  traefik:v3.6.2 \
-  --api.dashboard=true \
-  --api.insecure=true \
-  --providers.docker=true \
-  --providers.docker.exposedbydefault=false \
-  --entrypoints.web.address=:80
+```bash
+curl -fsSLo /tmp/laravel-aio-install.sh https://raw.githubusercontent.com/jamiekohns/laravel-aio-container/main/install.sh
+less /tmp/laravel-aio-install.sh
+bash /tmp/laravel-aio-install.sh
 ```
 
-# Run Docker GUI Container
+The installer is idempotent and safe to re-run.
 
-A local GUI for Docker control can be useful. Two options are Portainer and Dockhand.
+## What the installer does
 
-The `docker run` coommands below include labels for Traefik, so that they will be available on
-`portainer.localhost` and `dockhand.localhost`, respectively (run both if you like).
+- Verifies Ubuntu on WSL2
+- Installs Docker Engine + Docker Compose plugin from Docker's official Ubuntu apt repo (only if needed)
+- Adds your user to the `docker` group (if needed)
+- Starts/enables Docker service when systemd is available
+- Clones/updates the repo at `~/.laravel-aio-container`
+- Initializes `.env` from `.env.example` when missing
+- Starts Traefik + Portainer with Docker Compose
+- Installs shell integration:
+  - creates `~/.laravel_aio_env.sh`
+  - adds one guarded source line to `~/.bashrc`
 
-## Portainer
+## Defaults
+
+- Install location: `~/.laravel-aio-container`
+- Laravel projects path: `~/laravel-projects` (override with `LARAVEL_AIO_PROJECTS_DIR` in `.env`)
+- Traefik HTTP entrypoint: `http://localhost:80`
+- Traefik dashboard: `http://localhost:8080` (`TRAEFIK_INSECURE_DASHBOARD=true` by default for local dev; do not expose publicly)
+- Portainer: `http://localhost:9000`
+
+## Commands
+
+After installation, reload your shell:
+
 ```bash
-docker run -d \
-  --name portainer \
-  --restart always \
-  -p 9443:9443 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v portainer_data:/data \
-  --network web \
-  -l 'traefik.enable=true' \
-  -l 'traefik.http.routers.portainer.rule=Host("portainer.localhost")' \
-  -l 'traefik.http.routers.portainer.entrypoints=web' \
-  -l 'traefik.http.services.portainer.loadbalancer.server.port=9000' \
-  portainer/portainer-ce:latest
- ```
-
-## Dockhand
-```bash
-docker run -d \
-  --name dockhand \
-  --restart unless-stopped \
-  -p 3123:3000 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v dockhand_data:/app/data \
-  --network web \
-  -l 'traefik.enable=true' \
-  -l 'traefik.http.routers.portainer.rule=Host("dockhand.localhost")' \
-  -l 'traefik.http.routers.portainer.entrypoints=web' \
-  -l 'traefik.http.services.portainer.loadbalancer.server.port=3000' \
-  fnsys/dockhand:latest
- ```
-
-# Run Project Container
-See also ".bashrc docker wrapper", below.
-
-## Set APP_DIR and APP_SUBDOMAIN for your Laravel project on host
-```bash
-APP_DIR="/path/to/your/laravel-app"
-APP_PORT=32770
-APP_SUBDOMAIN="your-subdomain"
-
-docker run -d \
-  --name "$APP_SUBDOMAIN" \
-  --network web \
-  -p "$APP_PORT:80" \
-  -v "$APP_DIR:/var/www/html" \
-  -l traefik.enable=true \
-  -l traefik.docker.network=web \
-  -l "traefik.http.routers.${APP_SUBDOMAIN}.rule=Host(\`${APP_SUBDOMAIN}.localhost\`)" \
-  -l traefik.http.routers.${APP_SUBDOMAIN}.entrypoints=web \
-  -l traefik.http.services.${APP_SUBDOMAIN}.loadbalancer.server.port=80 \
-  laravel-php83-fpm-nginx
+source ~/.bashrc
 ```
 
-# (Optional) Run MS SQL Server (2022 linux)
+Then use:
+
+```bash
+laravel-aio up
+laravel-aio down
+laravel-aio status
+laravel-aio logs
+laravel-aio logs portainer
+laravel-aio new my-app
 ```
-docker run -d \
-  --name sql2022 \
-  -e ACCEPT_EULA=Y \
-  -e MSSQL_SA_PASSWORD='SuperSecretPassword!1' \
-  -p 1433:1433 \
-  -v sql2022data:/var/opt/mssql \
-  mcr.microsoft.com/mssql/server:2022-latest
-```
 
-- Connect SQL Server Management Studio from Windows on: `Server Name: tcp:[::1],1433`
+## WSL caveats
 
+- If your distro does not have systemd enabled, Docker service auto-start is limited.
+- If your user was newly added to the `docker` group, open a new terminal (or run `newgrp docker`) before using Docker without `sudo`.
 
+## Troubleshooting (quick)
 
-# docker wrapper script
-The docker wrapper adds some basic orchestration functions to your bash environment.
+- `docker: command not found`  
+  Re-run installer and ensure apt steps completed.
 
-> To use, include the `bash/docker.sh` script in your `.bashrc` file
+- `cannot connect to Docker daemon`  
+  On systemd-enabled WSL: `sudo systemctl enable --now docker`  
+  Without systemd: `sudo service docker start`
 
-This will add the `doctrl` function, providing interactive control of docker containers.
+- `laravel-aio: command not found`  
+  Run `source ~/.bashrc` or open a new terminal.
 
-- `doctrl enter`: enter interactive shell as `dev` user
-- `doctrl run`: start new container instance
-- `doctrl build`: build the default docker image (`laravel-php83-fpm-nginx-mailparse`)
-- `doctrl reload`: reload container after image rebuild
+## Security considerations
 
-`doctrl` without arguments will provide basic start/stop and enter functionality
+- `TRAEFIK_INSECURE_DASHBOARD=true` exposes the Traefik dashboard without auth; keep this local-only and never expose `:8080` externally.
+- If you need broader network access, set `TRAEFIK_INSECURE_DASHBOARD=false` and configure authenticated access before exposing Traefik.
+- Portainer uses Docker socket access for management operations; treat this setup as trusted local development only.
+
+## Existing container image and wrapper notes
+
+The repository still includes the original Dockerfile and `bash/scripts/docker.sh` workflow for manual image/container management.
