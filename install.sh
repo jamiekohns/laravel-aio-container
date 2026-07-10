@@ -224,11 +224,11 @@ EOF
 
 update_or_append_env_var() {
   local env_file="$1" key="$2" value="$3"
-  # Escape characters that have special meaning in the sed replacement side
+  # Escape characters special in the sed replacement side; use # as delimiter
   local escaped_value
-  escaped_value="$(printf '%s' "$value" | sed 's/[\\&|]/\\&/g')"
+  escaped_value="$(printf '%s' "$value" | sed 's/[\\&#]/\\&/g')"
   if grep -q "^${key}=" "$env_file" 2>/dev/null; then
-    sed -i "s|^${key}=.*|${key}=${escaped_value}|" "$env_file"
+    sed -i "s#^${key}=.*#${key}=${escaped_value}#" "$env_file"
   else
     printf '%s=%s\n' "$key" "$value" >> "$env_file"
   fi
@@ -240,9 +240,10 @@ set_project_name() {
     name="laravel-app"
     log "No --project-name provided, using default: $name"
   fi
+  [ -n "$name" ] || die "project name must not be empty"
   case "$name" in
-    ''|*[!a-zA-Z0-9-]*)
-      die "project name must be non-empty and contain only letters, numbers, and dashes"
+    *[!a-zA-Z0-9-]*)
+      die "project name can only contain letters, numbers, and dashes"
       ;;
   esac
   local env_file="$INSTALL_DIR/.env"
